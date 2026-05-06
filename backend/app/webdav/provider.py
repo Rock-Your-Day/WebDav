@@ -1,9 +1,9 @@
 """WsgiDAV filesystem provider backed by OpenWebDav storage providers."""
 
-import io
 import os
 from datetime import datetime
 
+from wsgidav.dav_error import DAVError, HTTP_FORBIDDEN, HTTP_INSUFFICIENT_STORAGE
 from wsgidav.dav_provider import DAVCollection, DAVNonCollection, DAVProvider
 
 from app.config import settings
@@ -33,6 +33,35 @@ class _TrackedWriteFile:
 
     def __exit__(self, *args):
         self.close()
+
+
+def _get_username(environ):
+    """Extract authenticated username from WSGI environ."""
+    return environ.get("wsgidav.auth.user_name", "")
+
+
+def _check_read(environ, path):
+    """Check read permission, raise DAVError if denied."""
+    from app.webdav.permissions import check_permission
+    username = _get_username(environ)
+    if not check_permission(username, path, "read"):
+        raise DAVError(HTTP_FORBIDDEN, f"Access denied for {username}")
+
+
+def _check_write(environ, path):
+    """Check write permission, raise DAVError if denied."""
+    from app.webdav.permissions import check_permission
+    username = _get_username(environ)
+    if not check_permission(username, path, "write"):
+        raise DAVError(HTTP_FORBIDDEN, f"Write access denied for {username}")
+
+
+def _check_quota(environ, size):
+    """Check quota, raise DAVError if exceeded."""
+    from app.webdav.permissions import check_quota
+    username = _get_username(environ)
+    if not check_quota(username, size):
+        raise DAVError(HTTP_INSUFFICIENT_STORAGE, "Storage quota exceeded")
 
 
 class OpenWebDavFile(DAVNonCollection):
@@ -78,27 +107,35 @@ class OpenWebDavFile(DAVNonCollection):
             return None
 
     def get_content(self):
+        _check_read(self.environ, self._file_path)
         from app.webdav.middleware import record_activity
         record_activity(self.environ, "download", self._file_path, self.get_content_length())
         return open(self._full_path, "rb")
 
     def begin_write(self, content_type=None):
+        _check_write(self.environ, self._file_path)
         parent_dir = os.path.dirname(self._full_path)
         os.makedirs(parent_dir, exist_ok=True)
         return _TrackedWriteFile(self._full_path, self.environ, self._file_path)
 
     def delete(self):
+        _check_write(self.environ, self._file_path)
         from app.webdav.middleware import record_activity
         record_activity(self.environ, "delete", self._file_path, self.get_content_length())
         os.remove(self._full_path)
 
     def copy_move_single(self, dest_path, is_move):
+        _check_write(self.environ, dest_path.lstrip("/"))
         dest_full = os.path.join(self._base_path, dest_path.lstrip("/"))
         os.makedirs(os.path.dirname(dest_full), exist_ok=True)
         if is_move:
+            from app.webdav.middleware import record_activity
+            record_activity(self.environ, "move", self._file_path, self.get_content_length())
             os.rename(self._full_path, dest_full)
         else:
             import shutil
+            from app.webdav.middleware import record_activity
+            record_activity(self.environ, "copy", self._file_path, self.get_content_length())
             shutil.copy2(self._full_path, dest_full)
 
     def support_etag(self):
@@ -133,6 +170,7 @@ class OpenWebDavCollection(DAVCollection):
             return None
 
     def get_member_names(self):
+        _check_read(self.environ, self._dir_path)
         try:
             return os.listdir(self._full_path)
         except OSError:
@@ -151,14 +189,15 @@ class OpenWebDavCollection(DAVCollection):
         return None
 
     def create_empty_resource(self, name):
+        _check_write(self.environ, self._dir_path)
         member_path = os.path.join(self._full_path, name)
-        # Create empty file
         open(member_path, "wb").close()
         dav_path = self.path.rstrip("/") + "/" + name
         rel_path = os.path.relpath(member_path, self._base_path)
         return OpenWebDavFile(dav_path, self.environ, rel_path, self._base_path)
 
     def create_collection(self, name):
+        _check_write(self.environ, self._dir_path)
         member_path = os.path.join(self._full_path, name)
         os.makedirs(member_path, exist_ok=True)
         dav_path = self.path.rstrip("/") + "/" + name
@@ -168,12 +207,14 @@ class OpenWebDavCollection(DAVCollection):
         return OpenWebDavCollection(dav_path, self.environ, rel_path, self._base_path)
 
     def delete(self):
+        _check_write(self.environ, self._dir_path)
         import shutil
         from app.webdav.middleware import record_activity
         record_activity(self.environ, "delete", self._dir_path)
         shutil.rmtree(self._full_path)
 
     def copy_move_single(self, dest_path, is_move):
+        _check_write(self.environ, dest_path.lstrip("/"))
         import shutil
         dest_full = os.path.join(self._base_path, dest_path.lstrip("/"))
         os.makedirs(os.path.dirname(dest_full), exist_ok=True)
@@ -187,8 +228,13 @@ class OpenWebDavProvider(DAVProvider):
     """
     WsgiDAV provider that serves per-user directories from the configured storage path.
 
-    URL structure: /dav/{username}/...
-    Maps to: {DEFAULT_STORAGE_PATH}/{username}/...
+    URL structure: /dav/{username}/path/to/file
+    Maps to: {DEFAULT_STORAGE_PATH}/{username}/path/to/file
+
+    Access control:
+    - Users have full access to /dav/{their-username}/*
+    - Admins have full access to everything
+    - Other access requires explicit access control rules
     """
 
     def __init__(self):
@@ -206,9 +252,7 @@ class OpenWebDavProvider(DAVProvider):
 
     def get_resource_inst(self, path, environ):
         """Return a DAVResource for the given path."""
-        # Strip leading /dav prefix if present (handled by mount)
         rel_path = path.lstrip("/")
-
         full_path = os.path.join(self.base_path, rel_path)
 
         # Prevent path traversal

@@ -7,8 +7,6 @@ from wsgidav.dc.base_dc import BaseDomainController
 
 from app.services.auth import decode_token, verify_password
 
-
-# Thread-local event loop for running async code from sync context
 _local = threading.local()
 
 
@@ -21,7 +19,6 @@ def _run_async(coro):
             _local.loop = loop
         return loop.run_until_complete(coro)
     except RuntimeError:
-        # If we're already in an async loop, create a new one in a thread
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(asyncio.run, coro).result()
@@ -32,6 +29,8 @@ class OpenWebDavDomainController(BaseDomainController):
     Domain controller that authenticates WebDAV requests using:
     1. Bearer token (JWT) in Authorization header
     2. Basic Auth (username/password) against local users
+
+    After successful auth, creates the user's personal directory if needed.
     """
 
     def __init__(self, wsgidav_app, config):
@@ -45,14 +44,18 @@ class OpenWebDavDomainController(BaseDomainController):
 
     def require_authentication(self, realm, environ):
         """Always require authentication for WebDAV."""
-        # Check for Bearer token first
         auth_header = environ.get("HTTP_AUTHORIZATION", "")
+
+        # Check Bearer token first
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
             payload = decode_token(token)
             if payload and payload.get("type") == "access":
-                environ["wsgidav.auth.user_name"] = payload.get("username", "")
+                username = payload.get("username", "")
+                environ["wsgidav.auth.user_name"] = username
+                self._ensure_user_dir(username)
                 return False  # No further auth needed
+
         return True
 
     def basic_auth_user(self, realm, user_name, password, environ):
@@ -60,7 +63,6 @@ class OpenWebDavDomainController(BaseDomainController):
 
         async def _check():
             from sqlalchemy import select
-
             from app.database import async_session
             from app.models.user import User
 
@@ -77,7 +79,24 @@ class OpenWebDavDomainController(BaseDomainController):
                 return None
 
         result = _run_async(_check())
+        if result:
+            self._ensure_user_dir(result)
         return result
+
+    def _ensure_user_dir(self, username: str):
+        """Create user's personal WebDAV directory if it doesn't exist."""
+        from app.webdav.permissions import ensure_user_directory
+        from app.config import settings
+        import os
+
+        base_path = settings.default_storage_path
+        try:
+            os.makedirs(base_path, exist_ok=True)
+        except OSError:
+            import pathlib
+            base_path = str(pathlib.Path(__file__).parent.parent.parent / "data" / "storage")
+
+        ensure_user_directory(username, base_path)
 
     def supports_http_digest_auth(self):
         return False
