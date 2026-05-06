@@ -6,7 +6,10 @@ echo "  OpenWebDav - Starting..."
 echo "========================================="
 
 # Ensure data directories exist
-mkdir -p /data/storage /data/db
+mkdir -p /data/storage /data/db /data/uploads
+
+# Set database URL to persistent volume if not explicitly configured
+export DATABASE_URL="${DATABASE_URL:-sqlite+aiosqlite:////data/db/openwebdav.db}"
 
 # Initialize database tables and create admin user
 echo "[*] Initializing database..."

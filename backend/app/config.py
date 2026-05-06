@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./data/openwebdav.db"
+    database_url: str = "sqlite+aiosqlite:////data/db/openwebdav.db"
 
     # Security
     secret_key: str = "change-this-to-a-random-string-in-production"
