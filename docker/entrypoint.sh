@@ -21,13 +21,25 @@ import sys
 
 async def init_db():
     from app.database import engine, async_session, Base
-    from app.models import User, StorageDestination, AccessControl, ActivityLog, ThemeSettings, SLAPolicy
+    from app.models import User, StorageDestination, AccessControl, ActivityLog, ThemeSettings, SLAPolicy, OIDCConfig
     from app.services.auth import hash_password
 
     # Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print('[*] Database tables created/verified')
+
+    # Migrate: add storage_id column if missing (for upgrades)
+    async with engine.begin() as conn:
+        from sqlalchemy import text, inspect as sa_inspect
+        def _check_column(connection):
+            inspector = sa_inspect(connection)
+            columns = [c['name'] for c in inspector.get_columns('users')]
+            return 'storage_id' in columns
+        has_column = await conn.run_sync(_check_column)
+        if not has_column:
+            await conn.execute(text('ALTER TABLE users ADD COLUMN storage_id VARCHAR(36) REFERENCES storage_destinations(id) ON DELETE SET NULL'))
+            print('[*] Migrated: added storage_id to users')
 
     # Create default admin user if not exists
     from sqlalchemy import select

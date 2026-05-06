@@ -53,3 +53,33 @@ export async function testStorage(id: string): Promise<{ status: string; message
   const response = await apiClient.post<{ status: string; message: string }>(`/storage/${id}/test`);
   return response.data;
 }
+
+export interface StorageBrowseEntry {
+  name: string;
+  path: string;
+  is_directory: boolean;
+  size: number | null;
+  modified: number;
+  children_count: number | null;
+}
+
+export interface StorageBrowseResponse {
+  storage_id: string;
+  storage_name: string;
+  base_path: string;
+  current_path: string;
+  parent_path: string | null;
+  entries: StorageBrowseEntry[];
+  stats: {
+    total_files: number;
+    total_dirs: number;
+    total_size: number;
+  };
+}
+
+export async function browseStorage(storageId: string, path = ''): Promise<StorageBrowseResponse> {
+  const response = await apiClient.get<StorageBrowseResponse>(`/storage/${storageId}/browse`, {
+    params: { path },
+  });
+  return response.data;
+}

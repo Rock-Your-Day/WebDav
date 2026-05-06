@@ -40,6 +40,7 @@ import {
   type CreateStorageRequest,
 } from '@/api/storage';
 import FolderPicker from '@/components/FolderPicker';
+import StorageExplorer from '@/components/StorageExplorer';
 
 function LocalPathField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -215,6 +216,8 @@ export default function StoragePage() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+  const [explorerOpen, setExplorerOpen] = useState(false);
+  const [explorerStorage, setExplorerStorage] = useState<{ id: string; name: string } | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -388,7 +391,14 @@ export default function StoragePage() {
                       onClick={() => testMutation.mutate(dest.id)}
                       color="success"
                     >
-                      Test Connection
+                      Test
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<FolderOpenIcon />}
+                      onClick={() => { setExplorerStorage({ id: dest.id, name: dest.name }); setExplorerOpen(true); }}
+                    >
+                      Explore
                     </Button>
                     <Box sx={{ flex: 1 }} />
                     <IconButton
@@ -506,6 +516,16 @@ export default function StoragePage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Storage Explorer */}
+      {explorerStorage && (
+        <StorageExplorer
+          open={explorerOpen}
+          onClose={() => setExplorerOpen(false)}
+          storageId={explorerStorage.id}
+          storageName={explorerStorage.name}
+        />
+      )}
     </Box>
   );
 }

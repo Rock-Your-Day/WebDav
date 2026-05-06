@@ -3,7 +3,18 @@
 from fastapi import APIRouter
 
 from app.api.v1 import access as access_routes
-from app.api.v1 import activity, auth, filesystem, oidc, reports, sla, storage, users, versions
+from app.api.v1 import (
+    activity,
+    auth,
+    filesystem,
+    oidc,
+    reports,
+    sla,
+    storage,
+    storage_browse,
+    users,
+    versions,
+)
 from app.api.v1 import settings as settings_routes
 
 router = APIRouter()
@@ -11,6 +22,7 @@ router = APIRouter()
 router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 router.include_router(users.router, prefix="/users", tags=["Users"])
 router.include_router(storage.router, prefix="/storage", tags=["Storage"])
+router.include_router(storage_browse.router, prefix="/storage", tags=["Storage Browser"])
 router.include_router(access_routes.router, prefix="/access", tags=["Access Control"])
 router.include_router(activity.router, prefix="/activity", tags=["Activity Log"])
 router.include_router(filesystem.router, prefix="/filesystem", tags=["Filesystem"])
