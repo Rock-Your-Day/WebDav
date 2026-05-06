@@ -1,0 +1,44 @@
+site_name: OpenWebDav Documentation
+site_description: Open-source WebDAV server with admin portal
+site_url: https://your-org.github.io/openwebdav
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: pink
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: pink
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Authentication: authentication.md
+  - Storage Backends: storage-backends.md
+  - WebDAV Clients: webdav-clients.md
+  - API Reference: api-reference.md
+  - Deployment: deployment.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true

@@ -1,0 +1,31 @@
+services:
+  openwebdav:
+    image: ghcr.io/your-org/openwebdav:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - openwebdav_data:/data
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Optional: PostgreSQL for production
+  # postgres:
+  #   image: postgres:16-alpine
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   environment:
+  #     POSTGRES_DB: openwebdav
+  #     POSTGRES_USER: openwebdav
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   restart: unless-stopped
+
+volumes:
+  openwebdav_data:
+  # postgres_data:

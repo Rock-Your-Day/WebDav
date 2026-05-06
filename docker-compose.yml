@@ -1,0 +1,20 @@
+services:
+  openwebdav:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - openwebdav_data:/data
+    environment:
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - DATABASE_URL=sqlite+aiosqlite:///./data/openwebdav.db
+      - DEFAULT_STORAGE_PATH=/data/storage
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - LOG_LEVEL=debug
+    restart: unless-stopped
+
+volumes:
+  openwebdav_data:

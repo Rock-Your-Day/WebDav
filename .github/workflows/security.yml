@@ -1,0 +1,94 @@
+name: Security Scanning (SARIF)
+
+# This workflow uploads detailed SARIF results to GitHub Security tab.
+# It runs alongside CI but focuses on rich reporting rather than gating.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan to catch newly disclosed CVEs
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  semgrep:
+    name: "SAST: Semgrep (SARIF)"
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          semgrep scan \
+            --config auto \
+            --config p/python \
+            --config p/typescript \
+            --config p/react \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --sarif --output semgrep-results.sarif \
+            || true
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+
+  bandit-sarif:
+    name: "SAST: Bandit (SARIF)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install "bandit[sarif]"
+      - run: bandit -r backend/app/ -f sarif -o bandit-results.sarif --severity-level low || true
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: bandit-results.sarif
+          category: bandit
+
+  trivy-sarif:
+    name: "Container: Trivy (SARIF)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          load: true
+          tags: openwebdav:scan
+          cache-from: type=gha
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: "openwebdav:scan"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          exit-code: "0"
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+  hadolint:
+    name: "Dockerfile: Hadolint"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/Dockerfile
+          failure-threshold: error
