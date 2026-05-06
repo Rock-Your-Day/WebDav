@@ -9,12 +9,22 @@ from app.config import settings
 
 
 class _TrackedWriteFile:
-    """File wrapper that records activity after write completes."""
+    """File wrapper that saves previous version and records activity after write completes."""
 
-    def __init__(self, full_path, environ, rel_path):
+    def __init__(self, full_path, environ, rel_path, base_path):
         self._full_path = full_path
         self._environ = environ
         self._rel_path = rel_path
+        self._base_path = base_path
+        self._username = environ.get("wsgidav.auth.user_name", "")
+
+        # Save previous version before overwriting
+        from app.services.versioning import record_version_in_db, save_version
+
+        version_data = save_version(base_path, rel_path, self._username)
+        if version_data:
+            record_version_in_db(version_data)
+
         self._file = open(full_path, "wb")
         self._bytes_written = 0
 
@@ -121,7 +131,9 @@ class OpenWebDavFile(DAVNonCollection):
         _check_write(self.environ, self._file_path)
         parent_dir = os.path.dirname(self._full_path)
         os.makedirs(parent_dir, exist_ok=True)
-        return _TrackedWriteFile(self._full_path, self.environ, self._file_path)
+        return _TrackedWriteFile(
+            self._full_path, self.environ, self._file_path, self._base_path
+        )
 
     def delete(self):
         _check_write(self.environ, self._file_path)
