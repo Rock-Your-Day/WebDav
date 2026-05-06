@@ -12,7 +12,7 @@ test.describe('Settings', () => {
     await expect(page.locator('h4')).toContainText('Settings');
     await expect(page.getByText(/theme & branding/i)).toBeVisible();
     await expect(page.getByLabel(/application name/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /save theme/i })).toBeVisible();
   });
 
   test('shows color preview', async ({ page }) => {
@@ -25,8 +25,8 @@ test.describe('Settings', () => {
     await nameField.clear();
     await nameField.fill('My WebDav');
 
-    await page.getByRole('button', { name: /save changes/i }).click();
+    await page.getByRole('button', { name: /save theme/i }).click();
 
-    await expect(page.getByText(/settings saved successfully/i)).toBeVisible();
+    await expect(page.getByText(/theme saved/i)).toBeVisible();
   });
 });
