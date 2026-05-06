@@ -131,9 +131,7 @@ class OpenWebDavFile(DAVNonCollection):
         _check_write(self.environ, self._file_path)
         parent_dir = os.path.dirname(self._full_path)
         os.makedirs(parent_dir, exist_ok=True)
-        return _TrackedWriteFile(
-            self._full_path, self.environ, self._file_path, self._base_path
-        )
+        return _TrackedWriteFile(self._full_path, self.environ, self._file_path, self._base_path)
 
     def delete(self):
         _check_write(self.environ, self._file_path)

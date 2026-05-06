@@ -45,11 +45,7 @@ def save_version(base_path: str, rel_path: str, username: str | None = None) -> 
         versions_dir = get_versions_dir(base_path)
         # Store versions as: .versions/{rel_path}.v{N}
         safe_name = rel_path.strip("/").replace("/", "__")
-        existing = [
-            f
-            for f in os.listdir(versions_dir)
-            if f.startswith(f"{safe_name}.v")
-        ]
+        existing = [f for f in os.listdir(versions_dir) if f.startswith(f"{safe_name}.v")]
         version_num = len(existing) + 1
 
         # Copy current file to versions directory
