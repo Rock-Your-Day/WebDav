@@ -11,6 +11,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     role: str = Field(default="user", pattern=r"^(admin|user|readonly)$")
     quota_bytes: int | None = None
+    storage_id: str | None = None
 
 
 class UserUpdate(BaseModel):
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     role: str | None = Field(default=None, pattern=r"^(admin|user|readonly)$")
     is_active: bool | None = None
     quota_bytes: int | None = None
+    storage_id: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -28,6 +30,7 @@ class UserResponse(BaseModel):
     is_active: bool
     auth_provider: str
     quota_bytes: int | None
+    storage_id: str | None
     created_at: datetime
     last_login: datetime | None
 

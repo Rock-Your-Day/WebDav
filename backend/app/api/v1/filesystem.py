@@ -54,13 +54,15 @@ async def browse_filesystem(
             try:
                 is_dir = os.path.isdir(full)
                 stat = os.stat(full)
-                entries.append({
-                    "name": name,
-                    "path": full,
-                    "is_directory": is_dir,
-                    "size": stat.st_size if not is_dir else None,
-                    "modified": stat.st_mtime,
-                })
+                entries.append(
+                    {
+                        "name": name,
+                        "path": full,
+                        "is_directory": is_dir,
+                        "size": stat.st_size if not is_dir else None,
+                        "modified": stat.st_mtime,
+                    }
+                )
             except PermissionError:
                 continue
     except PermissionError:

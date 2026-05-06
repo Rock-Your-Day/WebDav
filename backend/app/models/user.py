@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Enum, String
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -27,5 +27,8 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     quota_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    storage_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("storage_destinations.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

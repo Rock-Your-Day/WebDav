@@ -61,6 +61,7 @@ async def create_user(
         auth_provider="local",
         is_active=True,
         quota_bytes=request.quota_bytes,
+        storage_id=request.storage_id,
     )
     db.add(user)
     await db.flush()

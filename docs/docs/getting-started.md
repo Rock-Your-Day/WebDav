@@ -48,13 +48,34 @@ volumes:
 
 ## Connecting a WebDAV Client
 
-Your WebDAV endpoint is available at:
+### Setup Steps
+
+1. **Create a storage destination** in the admin UI (Storage → Add Storage)
+   - Choose "Local Filesystem" and set the path (e.g. `/data/storage/backups`)
+2. **Assign the storage to your user** (Users → Edit → set Storage Destination)
+3. **Connect your WebDAV client** to:
 
 ```
-http://localhost:8080/dav/your-username/
+http://your-server:8080/dav/
 ```
 
 Use Basic Auth with your username and password.
+
+### How It Works
+
+OpenWebDav acts as a **proxy** — your credentials determine who you are, and your assigned storage destination determines where files go. No special URL path needed.
+
+- Each user has **one** assigned storage destination
+- When you write files via WebDAV, they land in `{storage_path}/{username}/`
+- If no storage is assigned, files go to the default path `/data/storage/{username}/`
+
+### Tested Clients
+
+- **macOS Finder**: Go → Connect to Server → `http://server:8080/dav/`
+- **Notability / GoodNotes**: Add WebDAV backup with URL `http://server:8080/dav/`
+- **Cyberduck**: New connection → WebDAV (HTTP) → Server: `server`, Port: `8080`, Path: `/dav/`
+- **rclone**: `rclone config` → WebDAV → URL: `http://server:8080/dav/`
+- **Windows**: Map Network Drive → `http://server:8080/dav/`
 
 ## Next Steps
 

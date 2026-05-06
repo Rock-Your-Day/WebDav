@@ -23,6 +23,7 @@ OpenWebDav is a self-hosted, open-source WebDAV server with a Material UI v7 adm
 - OIDC flow for SSO providers (Keycloak, Okta, Azure AD)
 - WebDAV supports Basic Auth and Bearer Token
 - Rate limiting on auth endpoints (20 req/min)
+- 1:1 user-to-storage mapping (each user has one assigned storage destination)
 
 ## Security
 

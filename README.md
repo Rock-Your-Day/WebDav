@@ -188,14 +188,26 @@ All checks must pass before a container artifact is published:
 
 ## WebDAV Client Configuration
 
-Connect any WebDAV client to: `http://your-server:8080/dav/your-username/`
+OpenWebDav acts as a storage proxy. Connect any WebDAV client to:
+
+```
+http://your-server:8080/dav/
+```
+
+**Setup:**
+1. Create a storage destination in the admin UI (Storage page)
+2. Assign it to your user (Users → Edit → Storage Destination)
+3. Connect your client with Basic Auth (username + password)
+
+Files automatically go to the storage path assigned to your user. Each user has one storage destination (1:1 mapping).
 
 ### Tested Clients
 
-- Windows Explorer (Map Network Drive)
 - macOS Finder (Connect to Server)
+- Notability / GoodNotes (WebDAV backup)
 - Cyberduck / WinSCP
 - rclone / Duplicati
+- Windows Explorer (Map Network Drive)
 
 ---
 
