@@ -124,6 +124,50 @@ async def oidc_login(request: Request):
     return await oauth.oidc.authorize_redirect(request, redirect_uri)
 
 
+async def _resolve_oidc_role(db: AsyncSession, userinfo: dict) -> str:
+    """Resolve user role from OIDC groups/claims using the configured mapping."""
+    import json
+
+    from app.models.oidc_config import OIDCConfig
+
+    result = await db.execute(select(OIDCConfig).limit(1))
+    config = result.scalar_one_or_none()
+
+    if not config or not config.role_mapping:
+        return "user"
+
+    try:
+        mapping = json.loads(config.role_mapping)
+    except json.JSONDecodeError:
+        return "user"
+
+    # Extract groups from userinfo (common claims: groups, roles, realm_access.roles)
+    user_groups: list[str] = []
+    if "groups" in userinfo:
+        user_groups = userinfo["groups"]
+    elif "roles" in userinfo:
+        user_groups = userinfo["roles"]
+    elif "realm_access" in userinfo and "roles" in userinfo["realm_access"]:
+        user_groups = userinfo["realm_access"]["roles"]
+
+    # Check admin groups first (highest priority)
+    admin_groups = mapping.get("admin_groups", [])
+    if any(g in user_groups for g in admin_groups):
+        return "admin"
+
+    # Check readonly groups
+    readonly_groups = mapping.get("readonly_groups", [])
+    if any(g in user_groups for g in readonly_groups):
+        return "readonly"
+
+    # Check user groups
+    user_groups_config = mapping.get("user_groups", [])
+    if user_groups_config and any(g in user_groups for g in user_groups_config):
+        return "user"
+
+    return mapping.get("default_role", "user")
+
+
 @router.get("/oidc/callback")
 async def oidc_callback(request: Request, db: AsyncSession = Depends(get_db)):
     """Handle OIDC provider callback — create/update user and issue JWT."""
@@ -151,6 +195,9 @@ async def oidc_callback(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.oidc_subject == sub))
     user = result.scalar_one_or_none()
 
+    # Determine role from OIDC groups
+    role = await _resolve_oidc_role(db, userinfo)
+
     if not user:
         # Check if username already taken
         existing = await db.execute(select(User).where(User.username == username))
@@ -162,12 +209,15 @@ async def oidc_callback(request: Request, db: AsyncSession = Depends(get_db)):
             email=email,
             auth_provider="oidc",
             oidc_subject=sub,
-            role="user",
+            role=role,
             is_active=True,
         )
         db.add(user)
         await db.flush()
         await db.refresh(user)
+    else:
+        # Update role on each login based on current group membership
+        user.role = role
 
     # Update last login
     user.last_login = datetime.now(UTC)

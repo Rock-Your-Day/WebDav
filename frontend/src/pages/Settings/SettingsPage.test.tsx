@@ -47,7 +47,7 @@ describe('SettingsPage', () => {
 
   it('shows save button', () => {
     renderSettings();
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save theme/i })).toBeInTheDocument();
   });
 
   it('shows color preview sections', () => {
