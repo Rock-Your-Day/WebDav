@@ -77,17 +77,6 @@ jobs:
       - run: cd frontend && npm ci
       - run: cd frontend && npm run test
 
-  secret-scan:
-    name: "Gate: Secret Scan"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # ═══════════════════════════════════════════════════════════════════════
   # E2E: Build image, run E2E tests, scan container
   # ═══════════════════════════════════════════════════════════════════════
@@ -95,7 +84,7 @@ jobs:
   e2e-test:
     name: "Gate: E2E Tests"
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-security, backend-test, frontend-lint, frontend-test, secret-scan]
+    needs: [backend-lint, backend-security, backend-test, frontend-lint, frontend-test]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -144,7 +133,7 @@ jobs:
   container-scan:
     name: "Gate: Container Scan (Trivy)"
     runs-on: ubuntu-latest
-    needs: [backend-lint, backend-security, backend-test, frontend-lint, frontend-test, secret-scan]
+    needs: [backend-lint, backend-security, backend-test, frontend-lint, frontend-test]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

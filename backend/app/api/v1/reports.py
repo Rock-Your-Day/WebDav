@@ -68,7 +68,7 @@ async def activity_report(
         date_str = str(row.date)
         if date_str not in activity:
             activity[date_str] = {"date": date_str, "uploads": 0, "downloads": 0, "deletes": 0}
-        count = int(row.count)  # type: ignore[arg-type]
+        count: int = row.count  # type: ignore[assignment]
         if row.action == "upload":
             activity[date_str]["uploads"] = count
         elif row.action == "download":

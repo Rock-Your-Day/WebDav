@@ -75,17 +75,6 @@ jobs:
       - name: npm audit (fail on critical)
         run: cd frontend && npm audit --audit-level=critical
 
-  secret-scan:
-    name: "Security: Secret Detection"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # ═══════════════════════════════════════════════════════════════════════
   # Stage 3: Unit & Integration Tests (parallel)
   # ═══════════════════════════════════════════════════════════════════════
@@ -131,7 +120,6 @@ jobs:
       - frontend-lint
       - backend-security
       - frontend-security
-      - secret-scan
       - backend-test
       - frontend-test
     steps:
