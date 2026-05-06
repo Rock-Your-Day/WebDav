@@ -11,11 +11,13 @@ OpenWebDav is a self-hosted, open-source WebDAV server with a Material UI v7 adm
 - RFC-compliant WebDAV server (via WsgiDAV) for file access from standard clients
 - Multiple storage backends: local filesystem, AWS S3, NFS, Azure Blob
 - User management with role-based access control (admin, user, readonly)
+- 1:1 user-to-storage mapping (each user assigned one storage destination)
 - OIDC/SSO integration for enterprise authentication
 - SLA monitoring with alerting for missed backup schedules
 - Reports and analytics dashboard (storage usage, activity trends, SLA compliance)
 - File versioning and optional per-user storage quotas
 - Customizable theming (colors, logo, dark/light mode)
+- SMTP email configuration for alerts
 
 ## Authentication
 

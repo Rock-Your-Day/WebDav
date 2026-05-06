@@ -152,25 +152,6 @@ export const handlers = [
     return HttpResponse.json({ status: 'ok', message: 'Connection successful' });
   }),
 
-  // Access Control
-  http.get('/api/v1/access/', () => {
-    return HttpResponse.json({
-      rules: [
-        { id: '1', user_id: '2', storage_id: '1', permission: 'write', path_prefix: null },
-      ],
-      total: 1,
-    });
-  }),
-
-  http.post('/api/v1/access/', async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>;
-    return HttpResponse.json({ id: '2', ...body }, { status: 201 });
-  }),
-
-  http.delete('/api/v1/access/:id', () => {
-    return new HttpResponse(null, { status: 204 });
-  }),
-
   // Settings
   http.get('/api/v1/settings/theme', () => {
     return HttpResponse.json({

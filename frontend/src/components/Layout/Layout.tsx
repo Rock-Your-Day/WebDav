@@ -19,7 +19,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import StorageIcon from '@mui/icons-material/Storage';
-import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -36,7 +35,6 @@ const navItems = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Users', path: '/users', icon: <PeopleIcon /> },
   { label: 'Storage', path: '/storage', icon: <StorageIcon /> },
-  { label: 'Access Control', path: '/access', icon: <SecurityIcon /> },
   { label: 'Activity Log', path: '/activity', icon: <HistoryIcon /> },
   { label: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
   { label: 'SLA Policies', path: '/sla', icon: <TimerIcon /> },

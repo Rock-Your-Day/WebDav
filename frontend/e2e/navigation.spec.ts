@@ -17,6 +17,11 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL(/.*storage/);
     await expect(page.locator('h4')).toContainText('Storage Destinations');
 
+    // Activity Log
+    await navigateTo(page, 'Activity Log');
+    await expect(page).toHaveURL(/.*activity/);
+    await expect(page.locator('h4')).toContainText('Activity Log');
+
     // Reports
     await navigateTo(page, 'Reports');
     await expect(page).toHaveURL(/.*reports/);
@@ -26,11 +31,6 @@ test.describe('Navigation', () => {
     await navigateTo(page, 'Settings');
     await expect(page).toHaveURL(/.*settings/);
     await expect(page.locator('h4')).toContainText('Settings');
-
-    // Access Control
-    await navigateTo(page, 'Access Control');
-    await expect(page).toHaveURL(/.*access/);
-    await expect(page.locator('h4')).toContainText('Access Control');
 
     // Back to Dashboard
     await navigateTo(page, 'Dashboard');

@@ -14,6 +14,7 @@ OpenWebDav provides a self-hosted WebDAV server with configurable storage backen
 - **WebDAV Server** — RFC-compliant WebDAV with support for all major clients
 - **Multiple Storage Backends** — Local filesystem, AWS S3, NFS mounts, Azure Blob
 - **User Management** — Local users with role-based access control (admin, user, readonly)
+- **1:1 Storage Assignment** — Each user is assigned one storage destination via the admin UI
 - **OIDC/SSO Integration** — Connect to any OpenID Connect provider (Keycloak, Okta, Azure AD)
 - **SLA Monitoring** — Track backup frequency, alert on missed SLAs
 - **Reports & Analytics** — Visual dashboards with storage usage, activity trends, compliance
@@ -196,7 +197,7 @@ http://your-server:8080/dav/
 
 **Setup:**
 1. Create a storage destination in the admin UI (Storage page)
-2. Assign it to your user (Users → Edit → Storage Destination)
+2. Edit user → assign the storage destination (Users page)
 3. Connect your client with Basic Auth (username + password)
 
 Files automatically go to the storage path assigned to your user. Each user has one storage destination (1:1 mapping).
