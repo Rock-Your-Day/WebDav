@@ -192,3 +192,121 @@ async def serve_upload(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     return FileResponse(filepath)
+
+
+# ─── SMTP Configuration ──────────────────────────────────────────────────────
+
+
+class SMTPConfigRequest(BaseModel):
+    host: str | None = Field(default=None, max_length=255)
+    port: int = Field(default=587, ge=1, le=65535)
+    username: str | None = Field(default=None, max_length=255)
+    password: str | None = Field(default=None, max_length=500)
+    use_tls: bool = True
+    from_email: str = Field(default="noreply@openwebdav.local", max_length=255)
+
+
+@router.get("/smtp")
+async def get_smtp_config(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Get SMTP configuration."""
+    from app.models.smtp_config import SMTPConfig
+
+    result = await db.execute(select(SMTPConfig).limit(1))
+    config = result.scalar_one_or_none()
+
+    if not config:
+        return {
+            "host": None,
+            "port": 587,
+            "username": None,
+            "password_set": False,
+            "use_tls": True,
+            "from_email": "noreply@openwebdav.local",
+        }
+
+    return {
+        "host": config.host,
+        "port": config.port,
+        "username": config.username,
+        "password_set": bool(config.password),
+        "use_tls": config.use_tls,
+        "from_email": config.from_email,
+    }
+
+
+@router.put("/smtp")
+async def update_smtp_config(
+    request: SMTPConfigRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Update SMTP configuration."""
+    from app.models.smtp_config import SMTPConfig
+
+    result = await db.execute(select(SMTPConfig).limit(1))
+    config = result.scalar_one_or_none()
+
+    if not config:
+        config = SMTPConfig()
+        db.add(config)
+
+    config.host = request.host
+    config.port = request.port
+    config.username = request.username
+    if request.password:  # Only update if provided
+        config.password = request.password
+    config.use_tls = request.use_tls
+    config.from_email = request.from_email
+
+    await db.flush()
+    await db.refresh(config)
+
+    return {
+        "host": config.host,
+        "port": config.port,
+        "username": config.username,
+        "password_set": bool(config.password),
+        "use_tls": config.use_tls,
+        "from_email": config.from_email,
+        "message": "SMTP configuration saved.",
+    }
+
+
+@router.post("/smtp/test")
+async def test_smtp(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Send a test email using the current SMTP configuration."""
+    from app.models.smtp_config import SMTPConfig
+
+    result = await db.execute(select(SMTPConfig).limit(1))
+    config = result.scalar_one_or_none()
+
+    if not config or not config.host:
+        raise HTTPException(status_code=400, detail="SMTP not configured")
+
+    try:
+        from email.mime.text import MIMEText
+
+        import aiosmtplib
+
+        msg = MIMEText("This is a test email from OpenWebDav.")
+        msg["Subject"] = "[OpenWebDav] SMTP Test"
+        msg["From"] = config.from_email
+        msg["To"] = config.username or config.from_email
+
+        await aiosmtplib.send(
+            msg,
+            hostname=config.host,
+            port=config.port,
+            username=config.username,
+            password=config.password,
+            use_tls=config.use_tls,
+        )
+        return {"status": "ok", "message": "Test email sent successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"SMTP test failed: {str(e)}")

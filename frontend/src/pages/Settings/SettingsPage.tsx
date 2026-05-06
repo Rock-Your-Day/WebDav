@@ -18,8 +18,10 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import KeyIcon from '@mui/icons-material/Key';
 import GroupIcon from '@mui/icons-material/Group';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTheme, updateTheme, type ThemeUpdateRequest } from '@/api/settings';
+import { getTheme, updateTheme, getSMTPConfig, updateSMTPConfig, testSMTP, type ThemeUpdateRequest, type SMTPConfigRequest } from '@/api/settings';
 import { getOIDCConfig, updateOIDCConfig, getRoleMapping, updateRoleMapping, type OIDCConfigRequest, type RoleMappingRequest } from '@/api/oidc';
+import EmailIcon from '@mui/icons-material/Email';
+import SendIcon from '@mui/icons-material/Send';
 import { useThemeContext } from '@/theme/ThemeContext';
 
 export default function SettingsPage() {
@@ -64,6 +66,17 @@ export default function SettingsPage() {
   const { data: themeData } = useQuery({ queryKey: ['theme-settings'], queryFn: getTheme });
   const { data: oidcData } = useQuery({ queryKey: ['oidc-config'], queryFn: getOIDCConfig });
   const { data: roleData } = useQuery({ queryKey: ['role-mapping'], queryFn: getRoleMapping });
+  const { data: smtpData } = useQuery({ queryKey: ['smtp-config'], queryFn: getSMTPConfig });
+
+  // SMTP form
+  const [smtpForm, setSmtpForm] = useState<SMTPConfigRequest>({
+    host: '',
+    port: 587,
+    username: '',
+    password: '',
+    use_tls: true,
+    from_email: 'noreply@openwebdav.local',
+  });
 
   useEffect(() => {
     if (themeData) {
@@ -97,6 +110,19 @@ export default function SettingsPage() {
       setReadonlyGroupsInput(roleData.readonly_groups.join(', '));
     }
   }, [roleData]);
+
+  useEffect(() => {
+    if (smtpData) {
+      setSmtpForm({
+        host: smtpData.host || '',
+        port: smtpData.port,
+        username: smtpData.username || '',
+        password: '',
+        use_tls: smtpData.use_tls,
+        from_email: smtpData.from_email,
+      });
+    }
+  }, [smtpData]);
 
   // Mutations
   const themeMutation = useMutation({
@@ -132,6 +158,24 @@ export default function SettingsPage() {
     onError: () => setSnackbar({ open: true, message: 'Failed to save role mapping', severity: 'error' }),
   });
 
+  const smtpMutation = useMutation({
+    mutationFn: updateSMTPConfig,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['smtp-config'] });
+      setSnackbar({ open: true, message: data.message || 'SMTP config saved', severity: 'success' });
+    },
+    onError: () => setSnackbar({ open: true, message: 'Failed to save SMTP config', severity: 'error' }),
+  });
+
+  const smtpTestMutation = useMutation({
+    mutationFn: testSMTP,
+    onSuccess: (data) => setSnackbar({ open: true, message: data.message, severity: 'success' }),
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { detail?: string } } };
+      setSnackbar({ open: true, message: axiosErr.response?.data?.detail || 'SMTP test failed', severity: 'error' });
+    },
+  });
+
   const handleThemeSave = (e: React.FormEvent) => {
     e.preventDefault();
     themeMutation.mutate(themeForm);
@@ -140,6 +184,11 @@ export default function SettingsPage() {
   const handleOidcSave = (e: React.FormEvent) => {
     e.preventDefault();
     oidcMutation.mutate(oidcForm);
+  };
+
+  const handleSmtpSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    smtpMutation.mutate(smtpForm);
   };
 
   const handleRoleSave = (e: React.FormEvent) => {
@@ -335,6 +384,84 @@ export default function SettingsPage() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* SMTP Configuration */}
+      <Card sx={{ mt: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <EmailIcon color="primary" />
+            <Typography variant="h6">SMTP / Email</Typography>
+            <Chip label={smtpData?.host ? 'Configured' : 'Not Set'} size="small" color={smtpData?.host ? 'success' : 'default'} variant="outlined" />
+          </Box>
+          <form onSubmit={handleSmtpSave}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <TextField
+                  fullWidth
+                  label="SMTP Host"
+                  value={smtpForm.host || ''}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, host: e.target.value })}
+                  placeholder="smtp.gmail.com"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Port"
+                  type="number"
+                  value={smtpForm.port}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, port: parseInt(e.target.value) || 587 })}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Username"
+                  value={smtpForm.username || ''}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, username: e.target.value })}
+                  placeholder="user@gmail.com"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  value={smtpForm.password || ''}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, password: e.target.value })}
+                  helperText={smtpData?.password_set ? 'Password is set. Leave empty to keep.' : ''}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="From Email"
+                  value={smtpForm.from_email || ''}
+                  onChange={(e) => setSmtpForm({ ...smtpForm, from_email: e.target.value })}
+                  placeholder="noreply@yourdomain.com"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <FormControlLabel
+                  control={<Switch checked={smtpForm.use_tls ?? true} onChange={(e) => setSmtpForm({ ...smtpForm, use_tls: e.target.checked })} />}
+                  label="Use TLS"
+                  sx={{ mt: 1 }}
+                />
+              </Grid>
+              <Grid size={12}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={smtpMutation.isPending}>
+                    Save SMTP
+                  </Button>
+                  <Button variant="outlined" startIcon={<SendIcon />} onClick={() => smtpTestMutation.mutate()} disabled={smtpTestMutation.isPending || !smtpForm.host}>
+                    Send Test Email
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </form>
+        </CardContent>
+      </Card>
 
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
