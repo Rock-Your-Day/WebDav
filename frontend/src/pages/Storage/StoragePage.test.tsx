@@ -46,8 +46,8 @@ describe('StoragePage', () => {
   it('shows provider type labels', async () => {
     renderStorage();
     await waitFor(() => {
-      expect(screen.getByText('Provider: LOCAL')).toBeInTheDocument();
-      expect(screen.getByText('Provider: S3')).toBeInTheDocument();
+      expect(screen.getByText('Local Filesystem')).toBeInTheDocument();
+      expect(screen.getByText('AWS S3')).toBeInTheDocument();
     });
   });
 

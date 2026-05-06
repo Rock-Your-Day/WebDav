@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import KeyIcon from '@mui/icons-material/Key';
 import { useThemeContext } from '@/theme/ThemeContext';
 import { useAuthStore } from '@/stores/auth';
 import { login, getMe } from '@/api/auth';
@@ -58,16 +59,18 @@ export default function LoginPage() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Card sx={{ width: '100%', maxWidth: 440 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        background: (theme) =>
+          theme.palette.mode === 'light'
+            ? 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+            : 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+      }}
+    >
+      <Container maxWidth="sm" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Card sx={{ width: '100%', maxWidth: 440, boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               {config.logoPath ? (
@@ -76,26 +79,27 @@ export default function LoginPage() {
                 <Box>
                   <Box
                     sx={{
-                      width: 56,
-                      height: 56,
+                      width: 64,
+                      height: 64,
                       borderRadius: '50%',
-                      bgcolor: 'primary.main',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       mx: 'auto',
                       mb: 2,
+                      boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
                     }}
                   >
-                    <LockOutlinedIcon sx={{ color: 'white', fontSize: 28 }} />
+                    <LockOutlinedIcon sx={{ color: 'white', fontSize: 30 }} />
                   </Box>
-                  <Typography variant="h5" fontWeight="bold">
+                  <Typography variant="h5" fontWeight={700}>
                     {config.appName}
                   </Typography>
                 </Box>
               )}
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Sign in to your account
+                Sign in to manage your WebDAV server
               </Typography>
             </Box>
 
@@ -132,7 +136,14 @@ export default function LoginPage() {
                 variant="contained"
                 size="large"
                 disabled={loading}
-                sx={{ mt: 3, py: 1.5 }}
+                sx={{
+                  mt: 3,
+                  py: 1.5,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%)',
+                  },
+                }}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
               </Button>
@@ -148,6 +159,7 @@ export default function LoginPage() {
               fullWidth
               variant="outlined"
               size="large"
+              startIcon={<KeyIcon />}
               sx={{ py: 1.5 }}
               onClick={() => {
                 window.location.href = '/api/v1/auth/oidc/login';
@@ -155,9 +167,13 @@ export default function LoginPage() {
             >
               Sign in with SSO
             </Button>
+
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 3 }}>
+              Connect via WebDAV at <code>{window.location.origin}/dav/</code>
+            </Typography>
           </CardContent>
         </Card>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 }

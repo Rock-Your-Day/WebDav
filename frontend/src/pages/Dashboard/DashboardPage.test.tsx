@@ -37,7 +37,7 @@ describe('DashboardPage', () => {
     renderDashboard();
     await waitFor(() => {
       expect(screen.getByText('Total Users')).toBeInTheDocument();
-      expect(screen.getByText('Storage Destinations')).toBeInTheDocument();
+      expect(screen.getByText('Storage Backends')).toBeInTheDocument();
       expect(screen.getByText('Transfers Today')).toBeInTheDocument();
       expect(screen.getByText('SLA Violations')).toBeInTheDocument();
     });
@@ -54,6 +54,6 @@ describe('DashboardPage', () => {
   it('shows chart sections', () => {
     renderDashboard();
     expect(screen.getByText('Weekly Activity')).toBeInTheDocument();
-    expect(screen.getByText('Transfer Trend')).toBeInTheDocument();
+    expect(screen.getByText('Transfer Trend (7 days)')).toBeInTheDocument();
   });
 });
