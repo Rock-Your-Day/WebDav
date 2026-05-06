@@ -8,14 +8,14 @@ test.describe('Dashboard', () => {
 
   test('displays stat cards', async ({ page }) => {
     await expect(page.getByText('Total Users')).toBeVisible();
-    await expect(page.getByText('Storage Destinations')).toBeVisible();
+    await expect(page.getByText('Storage Backends')).toBeVisible();
     await expect(page.getByText('Transfers Today')).toBeVisible();
     await expect(page.getByText('SLA Violations')).toBeVisible();
   });
 
   test('displays charts section', async ({ page }) => {
     await expect(page.getByText('Weekly Activity')).toBeVisible();
-    await expect(page.getByText('Transfer Trend')).toBeVisible();
+    await expect(page.getByText('Transfer Trend (7 days)')).toBeVisible();
   });
 
   test('sidebar navigation items are present', async ({ page }) => {

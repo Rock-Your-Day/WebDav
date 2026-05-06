@@ -22,8 +22,11 @@ test.describe('Storage Management', () => {
     await page.getByRole('button', { name: /add storage/i }).click();
 
     const timestamp = Date.now();
-    await page.getByLabel(/name/i).fill(`E2E Storage ${timestamp}`);
+    // Step 1: Provider info
+    await page.getByLabel(/display name/i).fill(`E2E Storage ${timestamp}`);
+    await page.getByRole('button', { name: /next/i }).click();
 
+    // Step 2: Connection config — just submit with defaults
     await page.getByRole('button', { name: /^create$/i }).click();
 
     await expect(page.getByText(/storage destination created/i)).toBeVisible();
