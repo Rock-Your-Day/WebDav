@@ -24,7 +24,7 @@ class StorageProvider(ABC):
     """Abstract storage provider interface."""
 
     @abstractmethod
-    async def read(self, path: str) -> AsyncIterator[bytes]:
+    def read(self, path: str) -> AsyncIterator[bytes]:
         """Read file content as async byte stream."""
         ...
 

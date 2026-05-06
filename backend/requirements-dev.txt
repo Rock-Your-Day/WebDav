@@ -12,6 +12,7 @@ ruff==0.6.8
 
 # Type checking
 mypy==1.11.2
+types-aiofiles==24.1.0.20240626
 
 # Security scanning
 bandit==1.9.4

@@ -63,7 +63,7 @@ async def activity_report(
     rows = result.all()
 
     # Group by date
-    activity: dict[str, dict[str, int]] = {}
+    activity: dict[str, dict[str, str | int]] = {}
     for row in rows:
         date_str = str(row.date)
         if date_str not in activity:

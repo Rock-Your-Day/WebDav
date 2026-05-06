@@ -80,4 +80,4 @@ async def health_check():
 # Mount WebDAV at /dav
 from app.webdav.app import create_webdav_app  # noqa: E402
 
-app.mount("/dav", create_webdav_app())
+app.mount("/dav", create_webdav_app())  # type: ignore[arg-type]
