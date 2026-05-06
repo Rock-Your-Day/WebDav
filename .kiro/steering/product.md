@@ -42,7 +42,8 @@ OpenWebDav is a self-hosted, open-source WebDAV server with a Material UI v7 adm
 
 ## Testing
 
-- 34 backend unit/integration tests (pytest)
-- 10 frontend unit tests (vitest + testing-library + MSW)
-- 22 E2E tests (Playwright against running container)
+- 63 backend unit/integration tests (pytest)
+- 36 frontend unit tests (vitest + testing-library + MSW)
+- 27 E2E tests (Playwright against running container)
 - All tests must pass before container artifact is published
+- Security scanning: Bandit, Semgrep, pip-audit, npm audit, Gitleaks, Trivy

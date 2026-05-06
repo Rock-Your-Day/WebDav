@@ -148,13 +148,13 @@ docker compose up --build
 ### Running Tests
 
 ```bash
-# Backend (34 tests)
+# Backend (63 tests)
 cd backend && pytest -v
 
-# Frontend unit tests (10 tests)
+# Frontend unit tests (36 tests)
 cd frontend && npm run test
 
-# E2E tests (22 tests) — requires running container on :8080
+# E2E tests (27 tests) — requires running container on :8080
 cd frontend && npm run test:e2e
 ```
 
@@ -178,9 +178,9 @@ All checks must pass before a container artifact is published:
 
 1. **Lint** — ruff, mypy, eslint, tsc
 2. **Security** — Bandit SAST, pip-audit, npm audit, Gitleaks secret scan
-3. **Unit Tests** — pytest (34 tests), vitest (10 tests)
+3. **Unit Tests** — pytest (63 tests), vitest (36 tests)
 4. **Docker Build** — Multi-stage image build
-5. **E2E Tests** — Playwright (22 tests) against running container
+5. **E2E Tests** — Playwright (27 tests) against running container
 6. **Container Scan** — Trivy (CRITICAL/HIGH vulnerabilities)
 7. **Publish** — Push to GHCR (only on version tags, only if all above pass)
 
