@@ -10,6 +10,8 @@ import StoragePage from './pages/Storage/StoragePage';
 import ReportsPage from './pages/Reports/ReportsPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import AccessControlPage from './pages/AccessControl/AccessControlPage';
+import ActivityPage from './pages/Activity/ActivityPage';
+import SLAPage from './pages/SLA/SLAPage';
 
 function App() {
   return (
@@ -31,7 +33,9 @@ function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="storage" element={<StoragePage />} />
             <Route path="access" element={<AccessControlPage />} />
+            <Route path="activity" element={<ActivityPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="sla" element={<SLAPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>

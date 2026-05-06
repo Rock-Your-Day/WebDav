@@ -25,6 +25,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import LogoutIcon from '@mui/icons-material/Logout';
+import HistoryIcon from '@mui/icons-material/History';
+import TimerIcon from '@mui/icons-material/Timer';
 import { useThemeContext } from '@/theme/ThemeContext';
 import { useAuthStore } from '@/stores/auth';
 
@@ -35,7 +37,9 @@ const navItems = [
   { label: 'Users', path: '/users', icon: <PeopleIcon /> },
   { label: 'Storage', path: '/storage', icon: <StorageIcon /> },
   { label: 'Access Control', path: '/access', icon: <SecurityIcon /> },
+  { label: 'Activity Log', path: '/activity', icon: <HistoryIcon /> },
   { label: 'Reports', path: '/reports', icon: <AssessmentIcon /> },
+  { label: 'SLA Policies', path: '/sla', icon: <TimerIcon /> },
   { label: 'Settings', path: '/settings', icon: <SettingsIcon /> },
 ];
 
