@@ -8,9 +8,7 @@ from tests.conftest import auth_header
 
 
 @pytest.mark.asyncio
-async def test_change_password_success(
-    client: AsyncClient, admin_user: User, admin_token: str
-):
+async def test_change_password_success(client: AsyncClient, admin_user: User, admin_token: str):
     """Test successful password change."""
     response = await client.put(
         "/api/v1/users/me/password",
@@ -43,9 +41,7 @@ async def test_change_password_wrong_current(
 
 
 @pytest.mark.asyncio
-async def test_change_password_too_short(
-    client: AsyncClient, admin_user: User, admin_token: str
-):
+async def test_change_password_too_short(client: AsyncClient, admin_user: User, admin_token: str):
     """Test password change with too-short new password."""
     response = await client.put(
         "/api/v1/users/me/password",

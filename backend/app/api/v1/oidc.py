@@ -140,12 +140,14 @@ async def update_role_mapping(
         config = OIDCConfig()
         db.add(config)
 
-    config.role_mapping = json.dumps({
-        "admin_groups": request.admin_groups,
-        "user_groups": request.user_groups,
-        "readonly_groups": request.readonly_groups,
-        "default_role": request.default_role,
-    })
+    config.role_mapping = json.dumps(
+        {
+            "admin_groups": request.admin_groups,
+            "user_groups": request.user_groups,
+            "readonly_groups": request.readonly_groups,
+            "default_role": request.default_role,
+        }
+    )
 
     await db.flush()
 

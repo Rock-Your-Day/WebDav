@@ -43,9 +43,7 @@ async def test_list_activity_pagination(client: AsyncClient, admin_user: User, a
 
 
 @pytest.mark.asyncio
-async def test_activity_requires_admin(
-    client: AsyncClient, regular_user: User, user_token: str
-):
+async def test_activity_requires_admin(client: AsyncClient, regular_user: User, user_token: str):
     """Test activity endpoint requires admin."""
     response = await client.get("/api/v1/activity/", headers=auth_header(user_token))
     assert response.status_code == 403

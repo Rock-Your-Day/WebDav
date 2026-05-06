@@ -13,9 +13,7 @@ class OIDCConfig(Base):
 
     __tablename__ = "oidc_config"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     provider_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     client_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

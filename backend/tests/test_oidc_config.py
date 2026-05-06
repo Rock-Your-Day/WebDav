@@ -41,9 +41,7 @@ async def test_update_oidc_config(client: AsyncClient, admin_user: User, admin_t
 
 
 @pytest.mark.asyncio
-async def test_oidc_config_requires_admin(
-    client: AsyncClient, regular_user: User, user_token: str
-):
+async def test_oidc_config_requires_admin(client: AsyncClient, regular_user: User, user_token: str):
     """Test OIDC config endpoints require admin."""
     response = await client.get("/api/v1/oidc/config", headers=auth_header(user_token))
     assert response.status_code == 403
