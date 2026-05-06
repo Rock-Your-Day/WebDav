@@ -14,6 +14,7 @@ import {
   Divider,
   Grid,
   IconButton,
+  InputAdornment,
   MenuItem,
   Snackbar,
   Step,
@@ -27,6 +28,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CloudIcon from '@mui/icons-material/Cloud';
 import FolderIcon from '@mui/icons-material/Folder';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import StorageIcon from '@mui/icons-material/Storage';
 import LinkIcon from '@mui/icons-material/Link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -37,6 +39,38 @@ import {
   testStorage,
   type CreateStorageRequest,
 } from '@/api/storage';
+import FolderPicker from '@/components/FolderPicker';
+
+function LocalPathField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  return (
+    <>
+      <TextField
+        fullWidth
+        label="Storage Path"
+        placeholder="/data/storage/my-backup"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        helperText="Absolute path on the server filesystem"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton onClick={() => setPickerOpen(true)} edge="end" title="Browse folders">
+                <FolderOpenIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+      />
+      <FolderPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(path) => onChange(path)}
+        initialPath={value || '/data'}
+      />
+    </>
+  );
+}
 
 const providerMeta: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   local: { icon: <FolderIcon />, label: 'Local Filesystem', color: '#2e7d32' },
@@ -59,13 +93,9 @@ function ProviderConfigFields({
   switch (providerType) {
     case 'local':
       return (
-        <TextField
-          fullWidth
-          label="Storage Path"
-          placeholder="/data/storage/my-backup"
+        <LocalPathField
           value={(config.path as string) || ''}
-          onChange={(e) => update('path', e.target.value)}
-          helperText="Absolute path on the server filesystem"
+          onChange={(val) => update('path', val)}
         />
       );
     case 's3':
