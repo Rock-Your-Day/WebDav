@@ -24,7 +24,9 @@ async def list_users(
     count_result = await db.execute(select(func.count(User.id)))
     total = count_result.scalar() or 0
 
-    result = await db.execute(select(User).offset(skip).limit(limit).order_by(User.created_at.desc()))
+    result = await db.execute(
+        select(User).offset(skip).limit(limit).order_by(User.created_at.desc())
+    )
     users = result.scalars().all()
 
     return UserListResponse(

@@ -37,7 +37,9 @@ async def test_create_storage(client: AsyncClient, admin_user: User, admin_token
 
 
 @pytest.mark.asyncio
-async def test_create_storage_duplicate_name(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_create_storage_duplicate_name(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test creating storage with duplicate name returns 409."""
     # Create first
     await client.post(
@@ -55,7 +57,9 @@ async def test_create_storage_duplicate_name(client: AsyncClient, admin_user: Us
 
 
 @pytest.mark.asyncio
-async def test_create_storage_invalid_provider(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_create_storage_invalid_provider(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test creating storage with invalid provider type returns 422."""
     response = await client.post(
         "/api/v1/storage/",

@@ -1,6 +1,6 @@
 """Authentication endpoints."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
@@ -47,7 +47,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
         )
 
     # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    user.last_login = datetime.now(UTC)
     await db.commit()
 
     # Generate tokens
@@ -170,7 +170,7 @@ async def oidc_callback(request: Request, db: AsyncSession = Depends(get_db)):
         await db.refresh(user)
 
     # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    user.last_login = datetime.now(UTC)
     await db.commit()
 
     # Generate JWT

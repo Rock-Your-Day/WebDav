@@ -47,7 +47,9 @@ async def test_create_user(client: AsyncClient, admin_user: User, admin_token: s
 
 
 @pytest.mark.asyncio
-async def test_create_user_duplicate_username(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_create_user_duplicate_username(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test creating user with duplicate username returns 409."""
     response = await client.post(
         "/api/v1/users/",
@@ -63,7 +65,9 @@ async def test_create_user_duplicate_username(client: AsyncClient, admin_user: U
 
 
 @pytest.mark.asyncio
-async def test_create_user_invalid_username(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_create_user_invalid_username(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test creating user with invalid username returns 422."""
     response = await client.post(
         "/api/v1/users/",
@@ -118,7 +122,9 @@ async def test_get_user_other_forbidden(
 
 
 @pytest.mark.asyncio
-async def test_delete_user(client: AsyncClient, admin_user: User, regular_user: User, admin_token: str):
+async def test_delete_user(
+    client: AsyncClient, admin_user: User, regular_user: User, admin_token: str
+):
     """Test admin can delete a user."""
     response = await client.delete(
         f"/api/v1/users/{regular_user.id}",

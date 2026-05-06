@@ -1,6 +1,6 @@
 """Reports and analytics endpoints."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -28,11 +28,9 @@ async def dashboard_stats(
     total_storage = (await db.execute(select(func.count(StorageDestination.id)))).scalar() or 0
 
     # Activity in last 24h
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
+    since = datetime.now(UTC) - timedelta(hours=24)
     transfers_today = (
-        await db.execute(
-            select(func.count(ActivityLog.id)).where(ActivityLog.timestamp >= since)
-        )
+        await db.execute(select(func.count(ActivityLog.id)).where(ActivityLog.timestamp >= since))
     ).scalar() or 0
 
     return {
@@ -50,7 +48,7 @@ async def activity_report(
     _admin: User = Depends(require_admin),
 ):
     """Get activity summary report for the last N days."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
 
     result = await db.execute(
         select(
@@ -118,7 +116,7 @@ async def sla_compliance_report(
 ):
     """Get SLA compliance report — users with no recent activity."""
     # Find users whose last activity is older than 24h (configurable via SLA policies)
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    cutoff = datetime.now(UTC) - timedelta(hours=24)
 
     result = await db.execute(
         select(

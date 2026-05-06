@@ -46,7 +46,9 @@ async def test_update_theme_invalid_color(client: AsyncClient, admin_user: User,
 
 
 @pytest.mark.asyncio
-async def test_update_theme_requires_admin(client: AsyncClient, regular_user: User, user_token: str):
+async def test_update_theme_requires_admin(
+    client: AsyncClient, regular_user: User, user_token: str
+):
     """Test non-admin cannot update theme."""
     response = await client.put(
         "/api/v1/settings/theme",
@@ -73,7 +75,9 @@ async def test_upload_logo(client: AsyncClient, admin_user: User, admin_token: s
 
 
 @pytest.mark.asyncio
-async def test_upload_logo_rejects_non_image(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_upload_logo_rejects_non_image(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test logo upload rejects non-image files."""
     response = await client.post(
         "/api/v1/settings/theme/logo",

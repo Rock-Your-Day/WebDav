@@ -19,6 +19,7 @@ def _run_async(coro):
         return loop.run_until_complete(coro)
     except RuntimeError:
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(asyncio.run, coro).result()
 
@@ -48,9 +49,7 @@ def record_activity(
             # Look up user ID from username
             user_id = None
             if username:
-                result = await session.execute(
-                    select(User.id).where(User.username == username)
-                )
+                result = await session.execute(select(User.id).where(User.username == username))
                 row = result.scalar_one_or_none()
                 if row:
                     user_id = row

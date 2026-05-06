@@ -26,9 +26,18 @@ def create_webdav_app() -> WSGIMiddleware:
         },
         # Allow these methods
         "allowed_methods": [
-            "GET", "HEAD", "PUT", "DELETE", "MKCOL",
-            "PROPFIND", "PROPPATCH", "COPY", "MOVE",
-            "LOCK", "UNLOCK", "OPTIONS",
+            "GET",
+            "HEAD",
+            "PUT",
+            "DELETE",
+            "MKCOL",
+            "PROPFIND",
+            "PROPPATCH",
+            "COPY",
+            "MOVE",
+            "LOCK",
+            "UNLOCK",
+            "OPTIONS",
         ],
         # Disable the built-in dir browser (we have our own UI)
         "dir_browser": {

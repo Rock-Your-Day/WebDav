@@ -102,5 +102,6 @@ async def get_violations(
 ):
     """Get current SLA violations."""
     from app.services.sla import check_sla_compliance
+
     violations = await check_sla_compliance()
     return {"violations": violations, "total": len(violations)}

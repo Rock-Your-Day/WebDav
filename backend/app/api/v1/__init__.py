@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import auth, reports, sla, storage, users
 from app.api.v1 import access as access_routes
+from app.api.v1 import auth, reports, sla, storage, users
 from app.api.v1 import settings as settings_routes
 
 router = APIRouter()

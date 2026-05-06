@@ -20,6 +20,7 @@ def _run_async(coro):
         return loop.run_until_complete(coro)
     except RuntimeError:
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(asyncio.run, coro).result()
 
@@ -63,6 +64,7 @@ class OpenWebDavDomainController(BaseDomainController):
 
         async def _check():
             from sqlalchemy import select
+
             from app.database import async_session
             from app.models.user import User
 
@@ -85,15 +87,17 @@ class OpenWebDavDomainController(BaseDomainController):
 
     def _ensure_user_dir(self, username: str):
         """Create user's personal WebDAV directory if it doesn't exist."""
-        from app.webdav.permissions import ensure_user_directory
-        from app.config import settings
         import os
+
+        from app.config import settings
+        from app.webdav.permissions import ensure_user_directory
 
         base_path = settings.default_storage_path
         try:
             os.makedirs(base_path, exist_ok=True)
         except OSError:
             import pathlib
+
             base_path = str(pathlib.Path(__file__).parent.parent.parent / "data" / "storage")
 
         ensure_user_directory(username, base_path)

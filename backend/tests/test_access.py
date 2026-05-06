@@ -46,7 +46,9 @@ async def test_create_access_rule(client: AsyncClient, admin_user: User, admin_t
 
 
 @pytest.mark.asyncio
-async def test_create_duplicate_access_rule(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_create_duplicate_access_rule(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test creating duplicate access rule returns 409."""
     # Create storage
     storage_resp = await client.post(

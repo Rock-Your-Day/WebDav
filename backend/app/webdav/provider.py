@@ -1,9 +1,8 @@
 """WsgiDAV filesystem provider backed by OpenWebDav storage providers."""
 
 import os
-from datetime import datetime
 
-from wsgidav.dav_error import DAVError, HTTP_FORBIDDEN, HTTP_INSUFFICIENT_STORAGE
+from wsgidav.dav_error import HTTP_FORBIDDEN, HTTP_INSUFFICIENT_STORAGE, DAVError
 from wsgidav.dav_provider import DAVCollection, DAVNonCollection, DAVProvider
 
 from app.config import settings
@@ -26,6 +25,7 @@ class _TrackedWriteFile:
     def close(self):
         self._file.close()
         from app.webdav.middleware import record_activity
+
         record_activity(self._environ, "upload", self._rel_path, self._bytes_written)
 
     def __enter__(self):
@@ -43,6 +43,7 @@ def _get_username(environ):
 def _check_read(environ, path):
     """Check read permission, raise DAVError if denied."""
     from app.webdav.permissions import check_permission
+
     username = _get_username(environ)
     if not check_permission(username, path, "read"):
         raise DAVError(HTTP_FORBIDDEN, f"Access denied for {username}")
@@ -51,6 +52,7 @@ def _check_read(environ, path):
 def _check_write(environ, path):
     """Check write permission, raise DAVError if denied."""
     from app.webdav.permissions import check_permission
+
     username = _get_username(environ)
     if not check_permission(username, path, "write"):
         raise DAVError(HTTP_FORBIDDEN, f"Write access denied for {username}")
@@ -59,6 +61,7 @@ def _check_write(environ, path):
 def _check_quota(environ, size):
     """Check quota, raise DAVError if exceeded."""
     from app.webdav.permissions import check_quota
+
     username = _get_username(environ)
     if not check_quota(username, size):
         raise DAVError(HTTP_INSUFFICIENT_STORAGE, "Storage quota exceeded")
@@ -81,6 +84,7 @@ class OpenWebDavFile(DAVNonCollection):
 
     def get_content_type(self):
         import mimetypes
+
         content_type, _ = mimetypes.guess_type(self._full_path)
         return content_type or "application/octet-stream"
 
@@ -109,6 +113,7 @@ class OpenWebDavFile(DAVNonCollection):
     def get_content(self):
         _check_read(self.environ, self._file_path)
         from app.webdav.middleware import record_activity
+
         record_activity(self.environ, "download", self._file_path, self.get_content_length())
         return open(self._full_path, "rb")
 
@@ -121,6 +126,7 @@ class OpenWebDavFile(DAVNonCollection):
     def delete(self):
         _check_write(self.environ, self._file_path)
         from app.webdav.middleware import record_activity
+
         record_activity(self.environ, "delete", self._file_path, self.get_content_length())
         os.remove(self._full_path)
 
@@ -130,11 +136,14 @@ class OpenWebDavFile(DAVNonCollection):
         os.makedirs(os.path.dirname(dest_full), exist_ok=True)
         if is_move:
             from app.webdav.middleware import record_activity
+
             record_activity(self.environ, "move", self._file_path, self.get_content_length())
             os.rename(self._full_path, dest_full)
         else:
             import shutil
+
             from app.webdav.middleware import record_activity
+
             record_activity(self.environ, "copy", self._file_path, self.get_content_length())
             shutil.copy2(self._full_path, dest_full)
 
@@ -203,19 +212,23 @@ class OpenWebDavCollection(DAVCollection):
         dav_path = self.path.rstrip("/") + "/" + name
         rel_path = os.path.relpath(member_path, self._base_path)
         from app.webdav.middleware import record_activity
+
         record_activity(self.environ, "mkdir", rel_path)
         return OpenWebDavCollection(dav_path, self.environ, rel_path, self._base_path)
 
     def delete(self):
         _check_write(self.environ, self._dir_path)
         import shutil
+
         from app.webdav.middleware import record_activity
+
         record_activity(self.environ, "delete", self._dir_path)
         shutil.rmtree(self._full_path)
 
     def copy_move_single(self, dest_path, is_move):
         _check_write(self.environ, dest_path.lstrip("/"))
         import shutil
+
         dest_full = os.path.join(self._base_path, dest_path.lstrip("/"))
         os.makedirs(os.path.dirname(dest_full), exist_ok=True)
         if is_move:
@@ -246,6 +259,7 @@ class OpenWebDavProvider(DAVProvider):
             os.makedirs(self.base_path, exist_ok=True)
         except OSError:
             import pathlib
+
             fallback = str(pathlib.Path(__file__).parent.parent.parent / "data" / "storage")
             os.makedirs(fallback, exist_ok=True)
             self.base_path = fallback

@@ -99,7 +99,9 @@ async def test_delete_policy(client: AsyncClient, admin_user: User, admin_token:
 
 
 @pytest.mark.asyncio
-async def test_get_violations_endpoint_exists(client: AsyncClient, admin_user: User, admin_token: str):
+async def test_get_violations_endpoint_exists(
+    client: AsyncClient, admin_user: User, admin_token: str
+):
     """Test the violations endpoint is registered and requires auth."""
     # Without auth
     response = await client.get("/api/v1/sla/violations")

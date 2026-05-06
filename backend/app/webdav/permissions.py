@@ -17,6 +17,7 @@ def _run_async(coro):
         return loop.run_until_complete(coro)
     except RuntimeError:
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(asyncio.run, coro).result()
 
@@ -45,6 +46,7 @@ def check_permission(username: str, path: str, required: str = "read") -> bool:
 
     async def _check():
         from sqlalchemy import select
+
         from app.database import async_session
         from app.models.user import User
 
@@ -62,7 +64,6 @@ def check_permission(username: str, path: str, required: str = "read") -> bool:
 
             # Check access control rules
             from app.models.access import AccessControl
-            from app.models.storage import StorageDestination
 
             # Get all storage destinations the user has access to
             rules_result = await session.execute(
@@ -99,11 +100,13 @@ def check_quota(username: str, additional_bytes: int) -> bool:
     Returns True if the write is allowed, False if it would exceed quota.
     If the user has no quota set (None), writes are always allowed.
     """
+
     async def _check():
-        from sqlalchemy import select, func
+        from sqlalchemy import func, select
+
         from app.database import async_session
-        from app.models.user import User
         from app.models.activity import ActivityLog
+        from app.models.user import User
 
         async with async_session() as session:
             result = await session.execute(

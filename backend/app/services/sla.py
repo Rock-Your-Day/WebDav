@@ -4,16 +4,14 @@ Checks for users/storage destinations that haven't received activity
 within their configured SLA window and triggers alerts.
 """
 
-import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 
 from app.database import async_session
 from app.models.activity import ActivityLog
 from app.models.settings import SLAPolicy
-from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +25,14 @@ async def check_sla_compliance():
     """
     async with async_session() as session:
         # Get all active SLA policies
-        result = await session.execute(
-            select(SLAPolicy).where(SLAPolicy.is_active.is_(True))
-        )
+        result = await session.execute(select(SLAPolicy).where(SLAPolicy.is_active.is_(True)))
         policies = result.scalars().all()
 
         if not policies:
             return []
 
         violations = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for policy in policies:
             cutoff = now - timedelta(hours=policy.expected_frequency_hours)
@@ -83,6 +79,7 @@ async def _send_alert(violation: dict):
     if violation.get("alert_webhook"):
         try:
             import httpx
+
             async with httpx.AsyncClient() as client:
                 await client.post(
                     violation["alert_webhook"],
@@ -102,6 +99,7 @@ async def _send_alert(violation: dict):
     if violation.get("alert_email"):
         try:
             from app.services.email import send_sla_alert_email
+
             await send_sla_alert_email(violation)
         except Exception as e:
             logger.error(f"Failed to send email alert: {e}")
@@ -122,7 +120,5 @@ def start_sla_scheduler():
         replace_existing=True,
     )
     scheduler.start()
-    logger.info(
-        f"SLA scheduler started (interval: {settings.sla_check_interval_minutes} min)"
-    )
+    logger.info(f"SLA scheduler started (interval: {settings.sla_check_interval_minutes} min)")
     return scheduler

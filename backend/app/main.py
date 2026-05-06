@@ -22,17 +22,20 @@ async def lifespan(app: FastAPI):
     # Configure OIDC if enabled
     if settings.oidc_enabled:
         from app.services.oidc import configure_oidc
+
         configure_oidc()
         print("[OpenWebDav] OIDC configured")
 
     # Start background scheduler
     from app.tasks.scheduler import start_scheduler
+
     start_scheduler()
 
     yield
 
     # Shutdown
     from app.tasks.scheduler import stop_scheduler
+
     stop_scheduler()
     print("[OpenWebDav] Shutting down...")
 

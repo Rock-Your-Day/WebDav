@@ -13,6 +13,7 @@ scheduler = AsyncIOScheduler()
 def _run_sla_check():
     """Wrapper to run async SLA check from scheduler."""
     from app.services.sla import check_sla_compliance
+
     asyncio.create_task(check_sla_compliance())
 
 
@@ -28,7 +29,9 @@ def start_scheduler():
     )
 
     scheduler.start()
-    print(f"[OpenWebDav] Scheduler started (SLA check every {settings.sla_check_interval_minutes}m)")
+    print(
+        f"[OpenWebDav] Scheduler started (SLA check every {settings.sla_check_interval_minutes}m)"
+    )
 
 
 def stop_scheduler():

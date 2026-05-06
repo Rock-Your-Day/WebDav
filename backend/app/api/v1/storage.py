@@ -25,7 +25,10 @@ async def list_storage(
     total = count_result.scalar() or 0
 
     result = await db.execute(
-        select(StorageDestination).offset(skip).limit(limit).order_by(StorageDestination.created_at.desc())
+        select(StorageDestination)
+        .offset(skip)
+        .limit(limit)
+        .order_by(StorageDestination.created_at.desc())
     )
     destinations = result.scalars().all()
 

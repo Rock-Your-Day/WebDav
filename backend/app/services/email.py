@@ -13,8 +13,9 @@ async def send_sla_alert_email(violation: dict):
         logger.warning("SMTP not configured, skipping email alert")
         return
 
-    import aiosmtplib
     from email.mime.text import MIMEText
+
+    import aiosmtplib
 
     subject = f"[OpenWebDav] SLA Violation: {violation['policy_name']}"
     body = (
