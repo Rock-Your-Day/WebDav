@@ -17,6 +17,14 @@ async def lifespan(app: FastAPI):
     print(f"[OpenWebDav] Starting {settings.app_name}...")
     print(f"[OpenWebDav] Database: {settings.database_url}")
     print(f"[OpenWebDav] OIDC Enabled: {settings.oidc_enabled}")
+    print(f"[OpenWebDav] WebDAV storage: {settings.default_storage_path}")
+
+    # Configure OIDC if enabled
+    if settings.oidc_enabled:
+        from app.services.oidc import configure_oidc
+        configure_oidc()
+        print("[OpenWebDav] OIDC configured")
+
     yield
     # Shutdown
     print("[OpenWebDav] Shutting down...")
@@ -57,3 +65,9 @@ async def health_check():
         "app": settings.app_name,
         "version": "0.1.0",
     }
+
+
+# Mount WebDAV at /dav
+from app.webdav.app import create_webdav_app  # noqa: E402
+
+app.mount("/dav", create_webdav_app())

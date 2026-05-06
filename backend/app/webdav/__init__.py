@@ -1,0 +1,1 @@
+"""WebDAV integration module."""
