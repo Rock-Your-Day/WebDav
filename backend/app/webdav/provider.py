@@ -291,38 +291,18 @@ class OpenWebDavProvider(DAVProvider):
     def get_resource_inst(self, path, environ):
         """Return a DAVResource for the given path."""
         rel_path = path.lstrip("/")
-
-        # Determine the base path — for user-specific paths, check routing
-        base_path = self.base_path
-        path_parts = rel_path.split("/", 1)
-        if path_parts and path_parts[0]:
-            # This is a user directory — resolve their storage
-            username = path_parts[0]
-            from app.webdav.routing import resolve_user_storage_path
-
-            user_base = resolve_user_storage_path(username, self.base_path)
-            # The user_base already includes the username dir
-            if len(path_parts) > 1:
-                full_path = os.path.join(user_base, path_parts[1])
-            else:
-                full_path = user_base
-            # Use the parent of user_base as the effective base for this request
-            base_path = os.path.dirname(user_base)
-        else:
-            full_path = self.base_path
+        full_path = os.path.join(self.base_path, rel_path)
 
         # Prevent path traversal
-        real_base = os.path.realpath(base_path)
+        real_base = os.path.realpath(self.base_path)
         real_path = os.path.realpath(full_path)
         if not real_path.startswith(real_base):
             return None
 
-        rel_from_base = os.path.relpath(full_path, base_path)
-
         if os.path.isdir(full_path):
-            return OpenWebDavCollection(path, environ, rel_from_base, base_path)
+            return OpenWebDavCollection(path, environ, rel_path, self.base_path)
         elif os.path.isfile(full_path):
-            return OpenWebDavFile(path, environ, rel_from_base, base_path)
+            return OpenWebDavFile(path, environ, rel_path, self.base_path)
         elif path == "/" or rel_path == "":
             # Root — always exists
             return OpenWebDavCollection(path, environ, "", self.base_path)
