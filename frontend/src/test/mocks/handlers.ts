@@ -195,4 +195,55 @@ export const handlers = [
       ...body,
     });
   }),
+
+  // Activity Log
+  http.get('/api/v1/activity/', () => {
+    return HttpResponse.json({
+      entries: [
+        { id: '1', user_id: '1', storage_id: null, action: 'upload', file_path: 'admin/test.txt', file_size: 1024, timestamp: '2026-05-06T10:00:00Z' },
+        { id: '2', user_id: '1', storage_id: null, action: 'download', file_path: 'admin/test.txt', file_size: 1024, timestamp: '2026-05-06T11:00:00Z' },
+      ],
+      total: 2,
+    });
+  }),
+
+  // SLA Policies
+  http.get('/api/v1/sla/policies', () => {
+    return HttpResponse.json({
+      policies: [
+        { id: '1', name: 'Daily Backup', user_id: null, storage_id: '1', expected_frequency_hours: 24, alert_email: 'admin@test.com', alert_webhook: null, is_active: true },
+      ],
+      total: 1,
+    });
+  }),
+
+  http.post('/api/v1/sla/policies', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return HttpResponse.json({ id: '2', ...body, is_active: true }, { status: 201 });
+  }),
+
+  http.delete('/api/v1/sla/policies/:id', () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // OIDC Config
+  http.get('/api/v1/oidc/config', () => {
+    return HttpResponse.json({
+      enabled: false,
+      provider_url: null,
+      client_id: null,
+      client_secret_set: false,
+      scopes: 'openid profile email',
+      redirect_uri: null,
+    });
+  }),
+
+  http.get('/api/v1/oidc/role-mapping', () => {
+    return HttpResponse.json({
+      admin_groups: [],
+      user_groups: [],
+      readonly_groups: [],
+      default_role: 'user',
+    });
+  }),
 ];
