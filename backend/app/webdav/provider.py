@@ -249,19 +249,19 @@ class OpenWebDavCollection(DAVCollection):
 
 class OpenWebDavProvider(DAVProvider):
     """
-    WsgiDAV provider that serves per-user directories from the configured storage path.
+    WsgiDAV provider that acts as a storage proxy.
 
-    URL structure: /dav/{username}/path/to/file
+    How it works:
+    1. User connects to /dav/ with their credentials
+    2. Provider resolves their storage destination from access control rules
+    3. All file operations happen in that resolved directory
+    4. No username needed in the URL — auth determines the user, access control
+       determines where files go
 
-    Routing:
-    - Checks user's assigned storage destination via access control rules
-    - Local storage destinations use their configured path
-    - Falls back to DEFAULT_STORAGE_PATH/{username} if no assignment
+    URL: /dav/path/to/file
+    Maps to: {resolved_storage_path}/{username}/path/to/file
 
-    Access control:
-    - Users have full access to /dav/{their-username}/*
-    - Admins have full access to everything
-    - Other access requires explicit access control rules
+    If no storage destination is assigned, falls back to DEFAULT_STORAGE_PATH/{username}/
     """
 
     def __init__(self):
@@ -278,8 +278,8 @@ class OpenWebDavProvider(DAVProvider):
             os.makedirs(fallback, exist_ok=True)
             self.base_path = fallback
 
-    def _get_user_base(self, environ) -> str:
-        """Get the storage base path for the authenticated user."""
+    def _resolve_base_for_user(self, environ) -> str:
+        """Resolve the storage base path for the authenticated user."""
         username = environ.get("wsgidav.auth.user_name", "")
         if not username:
             return self.base_path
@@ -290,21 +290,23 @@ class OpenWebDavProvider(DAVProvider):
 
     def get_resource_inst(self, path, environ):
         """Return a DAVResource for the given path."""
+        # Resolve the user's storage directory
+        user_base = self._resolve_base_for_user(environ)
         rel_path = path.lstrip("/")
-        full_path = os.path.join(self.base_path, rel_path)
+        full_path = os.path.join(user_base, rel_path)
 
         # Prevent path traversal
-        real_base = os.path.realpath(self.base_path)
+        real_base = os.path.realpath(user_base)
         real_path = os.path.realpath(full_path)
         if not real_path.startswith(real_base):
             return None
 
         if os.path.isdir(full_path):
-            return OpenWebDavCollection(path, environ, rel_path, self.base_path)
+            return OpenWebDavCollection(path, environ, rel_path, user_base)
         elif os.path.isfile(full_path):
-            return OpenWebDavFile(path, environ, rel_path, self.base_path)
+            return OpenWebDavFile(path, environ, rel_path, user_base)
         elif path == "/" or rel_path == "":
-            # Root — always exists
-            return OpenWebDavCollection(path, environ, "", self.base_path)
+            # Root — the user's storage directory (always exists)
+            return OpenWebDavCollection(path, environ, "", user_base)
 
         return None

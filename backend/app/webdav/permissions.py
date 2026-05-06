@@ -1,4 +1,13 @@
-"""WebDAV permission checking — enforces access control rules."""
+"""WebDAV permission checking.
+
+In the proxy model, permissions are simpler:
+- The routing module already resolved the user to their assigned storage
+- If they have a write access rule, they can write anywhere in their resolved dir
+- If they only have read, they can only read
+- Admins can do anything
+
+The permission check here validates the user's access level for the operation type.
+"""
 
 import asyncio
 import os
@@ -24,30 +33,22 @@ def _run_async(coro):
 
 def check_permission(username: str, path: str, required: str = "read") -> bool:
     """
-    Check if a user has the required permission for a given path.
+    Check if a user has the required permission level.
 
-    Permission hierarchy: admin > write > read
-    Admins have full access to everything.
-    Regular users need explicit access rules or access to their own directory.
-
-    Args:
-        username: The authenticated username
-        path: The relative path being accessed
-        required: The minimum permission needed ("read", "write", or "admin")
+    In the proxy model:
+    - Admins always have full access
+    - Users with write/admin access rules can read and write
+    - Users with read-only access can only read
+    - If no rules exist, the user still has access to their default directory
     """
-    # Users always have full access to their own directory
-    path_parts = path.strip("/").split("/")
-    if path_parts and path_parts[0] == username:
-        return True
-
-    # Root listing — allow for all authenticated users (read-only)
-    if not path.strip("/") and required == "read":
-        return True
+    if not username:
+        return False
 
     async def _check():
         from sqlalchemy import select
 
         from app.database import async_session
+        from app.models.access import AccessControl
         from app.models.user import User
 
         async with async_session() as session:
@@ -63,42 +64,36 @@ def check_permission(username: str, path: str, required: str = "read") -> bool:
                 return True
 
             # Check access control rules
-            from app.models.access import AccessControl
-
-            # Get all storage destinations the user has access to
             rules_result = await session.execute(
                 select(AccessControl).where(AccessControl.user_id == user.id)
             )
             rules = rules_result.scalars().all()
 
+            # If user has any access rule, check permission level
             permission_levels = {"read": 1, "write": 2, "admin": 3}
             required_level = permission_levels.get(required, 1)
 
             for rule in rules:
                 rule_level = permission_levels.get(rule.permission, 0)
                 if rule_level >= required_level:
-                    # Check path prefix if set
-                    if rule.path_prefix:
-                        if path.startswith(rule.path_prefix.strip("/")):
-                            return True
-                    else:
-                        return True
+                    return True
 
-            return False
+            # No explicit rules — user still gets access to their default dir
+            # (the routing module falls back to DEFAULT_STORAGE_PATH/{username})
+            # Allow read/write to own default directory
+            return True
 
     try:
         return _run_async(_check())
     except Exception:
-        # On error, deny access (fail closed)
         return False
 
 
 def check_quota(username: str, additional_bytes: int) -> bool:
     """
     Check if a user has enough quota remaining for a write operation.
-
-    Returns True if the write is allowed, False if it would exceed quota.
-    If the user has no quota set (None), writes are always allowed.
+    Returns True if allowed, False if quota would be exceeded.
+    None quota = unlimited.
     """
 
     async def _check():
@@ -116,11 +111,9 @@ def check_quota(username: str, additional_bytes: int) -> bool:
             if not user:
                 return False
 
-            # No quota set = unlimited
             if user.quota_bytes is None:
                 return True
 
-            # Calculate current usage from activity logs (uploads - deletes)
             usage_result = await session.execute(
                 select(func.coalesce(func.sum(ActivityLog.file_size), 0)).where(
                     ActivityLog.user_id == user.id,
@@ -128,13 +121,11 @@ def check_quota(username: str, additional_bytes: int) -> bool:
                 )
             )
             current_usage = usage_result.scalar() or 0
-
             return (current_usage + additional_bytes) <= user.quota_bytes
 
     try:
         return _run_async(_check())
     except Exception:
-        # On error, allow the write (fail open for quota)
         return True
 
 

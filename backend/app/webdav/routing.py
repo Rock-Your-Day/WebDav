@@ -1,12 +1,22 @@
 """WebDAV storage routing — resolves the correct storage path for each user.
 
-Looks up the user's assigned storage destination from access control rules
-and returns the appropriate base path for their files.
+When a user connects via WebDAV, this module determines WHERE their files
+are stored based on their access control rules:
+
+1. Look up user's access control rules
+2. Find their assigned storage destination with write permission
+3. If it's a local provider, use its configured path
+4. Create a user subdirectory within that path
+5. All WebDAV operations happen in that resolved directory
+
+This makes OpenWebDav act as a proxy — the user connects with their creds,
+and files transparently go to whatever storage destination they're assigned to.
 """
 
 import asyncio
 import os
 import threading
+from functools import lru_cache
 
 _local = threading.local()
 
@@ -30,14 +40,14 @@ def resolve_user_storage_path(username: str, default_base: str) -> str:
     """
     Resolve the storage base path for a user.
 
-    Logic:
-    1. Look up the user's access control rules
-    2. Find their primary storage destination
-    3. If it's a local provider, use its configured path
-    4. Otherwise fall back to default_base/{username}
+    Returns the directory where this user's WebDAV files should be stored.
+    The path is the user's personal directory within their assigned storage destination.
 
-    For S3/Azure backends, files still go to local staging area
-    (full S3 routing requires the provider abstraction layer).
+    Example:
+    - Admin assigns user "tony" write access to storage "Notability Backups"
+    - That storage has config.path = "/data/storage/notability"
+    - This function returns "/data/storage/notability/tony"
+    - All of Tony's WebDAV files go there
     """
 
     async def _resolve():
@@ -55,20 +65,20 @@ def resolve_user_storage_path(username: str, default_base: str) -> str:
             )
             user = user_result.scalar_one_or_none()
             if not user:
-                return os.path.join(default_base, username)
+                return _default_path(username, default_base)
 
-            # Find user's storage access rules (prefer write access)
+            # Find user's storage access rules (prefer write/admin access)
             rules_result = await session.execute(
                 select(AccessControl)
                 .where(AccessControl.user_id == user.id)
-                .order_by(AccessControl.permission.desc())  # admin > write > read
+                .order_by(AccessControl.permission.desc())
             )
             rules = rules_result.scalars().all()
 
             if not rules:
-                return os.path.join(default_base, username)
+                return _default_path(username, default_base)
 
-            # Get the first storage destination with write access
+            # Get the first active storage destination with write access
             for rule in rules:
                 if rule.permission in ("write", "admin"):
                     storage_result = await session.execute(
@@ -79,17 +89,23 @@ def resolve_user_storage_path(username: str, default_base: str) -> str:
                     )
                     storage = storage_result.scalar_one_or_none()
                     if storage and storage.provider_type == "local":
-                        # Use the configured local path
-                        local_path = storage.config.get("path", default_base)
-                        user_path = os.path.join(local_path, username)
+                        # Use the storage destination's configured path
+                        storage_path = storage.config.get("path", default_base)
+                        user_path = os.path.join(storage_path, username)
                         os.makedirs(user_path, exist_ok=True)
                         return user_path
 
-            # Default: use the standard path
-            return os.path.join(default_base, username)
+            # No write-capable local storage found — use default
+            return _default_path(username, default_base)
 
     try:
         return _run_async(_resolve())
     except Exception:
-        # On error, fall back to default
-        return os.path.join(default_base, username)
+        return _default_path(username, default_base)
+
+
+def _default_path(username: str, default_base: str) -> str:
+    """Fall back to default storage path with user subdirectory."""
+    path = os.path.join(default_base, username)
+    os.makedirs(path, exist_ok=True)
+    return path
