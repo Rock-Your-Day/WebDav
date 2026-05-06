@@ -9,6 +9,32 @@ from wsgidav.dav_provider import DAVCollection, DAVNonCollection, DAVProvider
 from app.config import settings
 
 
+class _TrackedWriteFile:
+    """File wrapper that records activity after write completes."""
+
+    def __init__(self, full_path, environ, rel_path):
+        self._full_path = full_path
+        self._environ = environ
+        self._rel_path = rel_path
+        self._file = open(full_path, "wb")
+        self._bytes_written = 0
+
+    def write(self, data):
+        self._bytes_written += len(data)
+        return self._file.write(data)
+
+    def close(self):
+        self._file.close()
+        from app.webdav.middleware import record_activity
+        record_activity(self._environ, "upload", self._rel_path, self._bytes_written)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+
 class OpenWebDavFile(DAVNonCollection):
     """A file resource in the WebDAV tree."""
 
@@ -52,14 +78,18 @@ class OpenWebDavFile(DAVNonCollection):
             return None
 
     def get_content(self):
+        from app.webdav.middleware import record_activity
+        record_activity(self.environ, "download", self._file_path, self.get_content_length())
         return open(self._full_path, "rb")
 
     def begin_write(self, content_type=None):
         parent_dir = os.path.dirname(self._full_path)
         os.makedirs(parent_dir, exist_ok=True)
-        return open(self._full_path, "wb")
+        return _TrackedWriteFile(self._full_path, self.environ, self._file_path)
 
     def delete(self):
+        from app.webdav.middleware import record_activity
+        record_activity(self.environ, "delete", self._file_path, self.get_content_length())
         os.remove(self._full_path)
 
     def copy_move_single(self, dest_path, is_move):
@@ -133,10 +163,14 @@ class OpenWebDavCollection(DAVCollection):
         os.makedirs(member_path, exist_ok=True)
         dav_path = self.path.rstrip("/") + "/" + name
         rel_path = os.path.relpath(member_path, self._base_path)
+        from app.webdav.middleware import record_activity
+        record_activity(self.environ, "mkdir", rel_path)
         return OpenWebDavCollection(dav_path, self.environ, rel_path, self._base_path)
 
     def delete(self):
         import shutil
+        from app.webdav.middleware import record_activity
+        record_activity(self.environ, "delete", self._dir_path)
         shutil.rmtree(self._full_path)
 
     def copy_move_single(self, dest_path, is_move):
