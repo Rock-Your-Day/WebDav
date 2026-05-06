@@ -69,11 +69,11 @@ def resolve_user_storage_path(username: str, default_base: str) -> str:
             if not storage or storage.provider_type != "local":
                 return _default_path(username, default_base)
 
-            # Use the storage destination's configured path
+            # Use the storage destination's configured path directly
+            # (1:1 mapping — no username subdirectory needed)
             storage_path = storage.config.get("path", default_base)
-            user_path = os.path.join(storage_path, username)
-            os.makedirs(user_path, exist_ok=True)
-            return user_path
+            os.makedirs(storage_path, exist_ok=True)
+            return storage_path
 
     try:
         return _run_async(_resolve())
