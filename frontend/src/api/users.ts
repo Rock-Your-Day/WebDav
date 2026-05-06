@@ -11,6 +11,7 @@ export interface User {
   is_active: boolean;
   auth_provider: string;
   quota_bytes: number | null;
+  storage_id: string | null;
   created_at: string;
   last_login: string | null;
 }
@@ -26,6 +27,7 @@ export interface CreateUserRequest {
   password: string;
   role: string;
   quota_bytes?: number | null;
+  storage_id?: string | null;
 }
 
 export interface UpdateUserRequest {
@@ -33,6 +35,7 @@ export interface UpdateUserRequest {
   role?: string;
   is_active?: boolean;
   quota_bytes?: number | null;
+  storage_id?: string | null;
 }
 
 export async function listUsers(skip = 0, limit = 50): Promise<UserListResponse> {
