@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Box,
+  Button,
   Card,
   Chip,
   MenuItem,
@@ -21,8 +22,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listActivity } from '@/api/activity';
+import apiClient from '@/api/client';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 
 const actionIcons: Record<string, React.ReactNode> = {
   upload: <CloudUploadIcon fontSize="small" color="primary" />,
@@ -55,6 +58,7 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function ActivityPage() {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [actionFilter, setActionFilter] = useState('');
@@ -63,6 +67,11 @@ export default function ActivityPage() {
     queryKey: ['activity', page, rowsPerPage, actionFilter],
     queryFn: () =>
       listActivity(page * rowsPerPage, rowsPerPage, undefined, actionFilter || undefined),
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: () => apiClient.delete('/activity/'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['activity'] }),
   });
 
   return (
@@ -74,22 +83,34 @@ export default function ActivityPage() {
             Audit trail of all file operations
           </Typography>
         </Box>
-        <TextField
-          select
-          size="small"
-          value={actionFilter}
-          onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
-          sx={{ minWidth: 150 }}
-          label="Filter"
-        >
-          <MenuItem value="">All Actions</MenuItem>
-          <MenuItem value="upload">Uploads</MenuItem>
-          <MenuItem value="download">Downloads</MenuItem>
-          <MenuItem value="delete">Deletes</MenuItem>
-          <MenuItem value="mkdir">Directories</MenuItem>
-          <MenuItem value="move">Moves</MenuItem>
-          <MenuItem value="copy">Copies</MenuItem>
-        </TextField>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <TextField
+            select
+            size="small"
+            value={actionFilter}
+            onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
+            sx={{ minWidth: 150 }}
+            label="Filter"
+          >
+            <MenuItem value="">All Actions</MenuItem>
+            <MenuItem value="upload">Uploads</MenuItem>
+            <MenuItem value="download">Downloads</MenuItem>
+            <MenuItem value="delete">Deletes</MenuItem>
+            <MenuItem value="mkdir">Directories</MenuItem>
+            <MenuItem value="move">Moves</MenuItem>
+            <MenuItem value="copy">Copies</MenuItem>
+          </TextField>
+          <Button
+            variant="outlined"
+            color="error"
+            size="small"
+            startIcon={<DeleteSweepIcon />}
+            onClick={() => { if (confirm('Clear all activity logs?')) clearMutation.mutate(); }}
+            disabled={clearMutation.isPending || !data?.total}
+          >
+            Clear
+          </Button>
+        </Box>
       </Box>
 
       <Card>

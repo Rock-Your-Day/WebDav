@@ -54,3 +54,15 @@ async def list_activity(
         ],
         "total": total,
     }
+
+
+@router.delete("/", status_code=204)
+async def clear_activity(
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Clear all activity log entries."""
+    from sqlalchemy import delete
+
+    await db.execute(delete(ActivityLog))
+    return None
