@@ -73,7 +73,7 @@ async def browse_storage(
     # Calculate stats
     total_files = sum(1 for e in entries if not e["is_directory"])
     total_dirs = sum(1 for e in entries if e["is_directory"])
-    total_size = sum(e["size"] or 0 for e in entries if not e["is_directory"])
+    total_size = sum(int(e["size"] or 0) for e in entries if not e["is_directory"])
 
     return {
         "storage_id": storage_id,
